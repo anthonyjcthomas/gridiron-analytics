@@ -1,26 +1,24 @@
 import json
 from pathlib import Path
+from typing import Dict, List
 
-import nflreadpy as nfl
 import numpy as np
 import pandas as pd
+import nflreadpy as nfl
 
-# ---------- Paths ----------
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# store data files inside backend/data
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-TEAM_TENDENCIES_PATH = DATA_DIR / "team_tendencies_2024.json"
 FOURTH_DOWN_PATH = DATA_DIR / "fourth_down_aggression_2024.json"
 EARLY_DOWN_PATH = DATA_DIR / "neutral_early_down_pass_rate_2024.json"
+TEAM_TENDENCIES_PATH = DATA_DIR / "team_tendencies_2024.json"
 
-
-# ---------- Load PBP ----------
 
 def load_pbp_2024() -> pd.DataFrame:
     """
     Load 2024 play-by-play data from nflverse via nflreadpy.
-    This returns a Polars DataFrame, so we convert to pandas.
     """
     print("Loading 2024 play-by-play data...")
     pbp_polars = nfl.load_pbp([2024])  # 2024 season
@@ -29,18 +27,14 @@ def load_pbp_2024() -> pd.DataFrame:
     return pbp
 
 
-# ---------- Team run/pass by down ----------
-
 def build_team_tendencies(pbp: pd.DataFrame) -> pd.DataFrame:
     """
     Build run/pass rate by down for each team.
     """
-    # Keep only offensive plays
     plays = pbp[
         (pbp["pass_attempt"] == 1) | (pbp["rush_attempt"] == 1)
     ].copy()
 
-    # Map play type
     def get_play_type(row):
         if row["pass_attempt"] == 1:
             return "pass"
@@ -50,14 +44,12 @@ def build_team_tendencies(pbp: pd.DataFrame) -> pd.DataFrame:
 
     plays["play_type"] = plays.apply(get_play_type, axis=1)
 
-    # Group: team (posteam) x down x play_type
     grouped = (
         plays.groupby(["posteam", "down", "play_type"])
         .size()
         .reset_index(name="play_count")
     )
 
-    # Total plays per team+down
     totals = (
         grouped.groupby(["posteam", "down"])["play_count"]
         .sum()
@@ -67,7 +59,6 @@ def build_team_tendencies(pbp: pd.DataFrame) -> pd.DataFrame:
     merged = grouped.merge(totals, on=["posteam", "down"], how="left")
     merged["rate"] = merged["play_count"] / merged["total_plays"]
 
-    # Pivot to have rush_rate and pass_rate columns
     pivot = merged.pivot_table(
         index=["posteam", "down"],
         columns="play_type",
@@ -75,7 +66,6 @@ def build_team_tendencies(pbp: pd.DataFrame) -> pd.DataFrame:
         fill_value=0.0,
     ).reset_index()
 
-    # Ensure consistent column names
     pivot = pivot.rename(
         columns={
             "posteam": "team",
@@ -84,7 +74,6 @@ def build_team_tendencies(pbp: pd.DataFrame) -> pd.DataFrame:
         }
     )
 
-    # Down as int (1–4)
     pivot["down"] = pivot["down"].astype("Int64")
 
     return pivot.sort_values(["team", "down"])
@@ -94,7 +83,7 @@ def save_tendencies_json(df: pd.DataFrame, path: Path):
     """
     Save the team tendencies DataFrame as a JSON file, grouped by team.
     """
-    result: dict[str, list[dict]] = {}
+    result: Dict[str, List[dict]] = {}
     for team, group in df.groupby("team"):
         result[team] = []
         for _, row in group.iterrows():
@@ -112,24 +101,14 @@ def save_tendencies_json(df: pd.DataFrame, path: Path):
     print(f"Saved team tendencies JSON to {path}")
 
 
-# ---------- 4th-down aggression ----------
-
 def build_fourth_down_aggression(pbp: pd.DataFrame) -> pd.DataFrame:
     """
     Compute a simple 4th-down aggression metric by team.
 
-    Definition (v1):
-    - Consider 4th down plays with:
-        * 1 <= ydstogo <= 3  (4th-and-short)
-        * between own 20 and opp 40 (yardline_100 between 20 and 80)
-    - "Go for it" if play_type in ["run", "pass"].
-    - "Not go" if play_type in ["punt", "field_goal"].
-    - Compute league-average go rate and team go rate.
-    - Aggression index = team_go_rate - league_go_rate.
+    4th & short (1–3 yds), between the 20s, non-penalty. Go = run/pass, Not-go = punt/FG.
     """
     df = pbp.copy()
 
-    # Basic filters: 4th & short, middle of field, non-penalty plays
     mask = (
         (df["down"] == 4)
         & (df["ydstogo"].between(1, 3))
@@ -139,7 +118,6 @@ def build_fourth_down_aggression(pbp: pd.DataFrame) -> pd.DataFrame:
 
     df = df.loc[mask]
 
-    # classify decisions
     go_mask = df["play_type"].isin(["run", "pass"])
     not_go_mask = df["play_type"].isin(["punt", "field_goal"])
 
@@ -158,12 +136,10 @@ def build_fourth_down_aggression(pbp: pd.DataFrame) -> pd.DataFrame:
 
     df["is_go_for_it"] = go_mask.loc[df.index]
 
-    # league-wide go rate
     league_attempts = len(df)
     league_go = int(df["is_go_for_it"].sum())
     league_go_rate = league_go / league_attempts if league_attempts > 0 else np.nan
 
-    # per-team aggregation
     grouped = (
         df.groupby("posteam", dropna=False)["is_go_for_it"]
         .agg(["count", "sum"])
@@ -183,24 +159,16 @@ def build_fourth_down_aggression(pbp: pd.DataFrame) -> pd.DataFrame:
     grouped["league_go_rate"] = league_go_rate
     grouped["aggression_index"] = grouped["go_rate"] - league_go_rate
 
-    # Sort most aggressive first
     grouped.sort_values("aggression_index", ascending=False, inplace=True)
     return grouped
 
 
-# ---------- Neutral early-down pass rate ----------
-
 def build_neutral_early_down_pass_rate(pbp: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute neutral early-down pass rate by team.
+    Neutral early-down pass rate by team.
 
-    Filters:
-    - Down 1 or 2
-    - 7 <= ydstogo <= 10
-    - Between the 20s: 20 <= yardline_100 <= 80
-    - Score differential between -7 and +7
-    - Non-penalty plays
-    - Only run/pass plays
+    Down 1 or 2, 7–10 yds to go, between the 20s, score diff in [-7, 7],
+    non-penalty, run/pass plays only.
     """
     df = pbp.copy()
 
@@ -214,7 +182,6 @@ def build_neutral_early_down_pass_rate(pbp: pd.DataFrame) -> pd.DataFrame:
 
     df = df.loc[mask]
 
-    # classify pass/run
     play_mask = df["play_type"].isin(["run", "pass"])
     df = df.loc[play_mask].copy()
     if df.empty:
@@ -231,7 +198,6 @@ def build_neutral_early_down_pass_rate(pbp: pd.DataFrame) -> pd.DataFrame:
 
     df["is_pass"] = df["play_type"] == "pass"
 
-    # league-level
     league_plays = len(df)
     league_passes = int(df["is_pass"].sum())
     league_pass_rate = league_passes / league_plays if league_plays > 0 else np.nan
@@ -257,31 +223,3 @@ def build_neutral_early_down_pass_rate(pbp: pd.DataFrame) -> pd.DataFrame:
 
     grouped.sort_values("pass_rate_over_avg", ascending=False, inplace=True)
     return grouped
-
-
-# ---------- Main ----------
-
-def main():
-    pbp_2024 = load_pbp_2024()
-
-    # Team tendencies by down
-    tendencies = build_team_tendencies(pbp_2024)
-    save_tendencies_json(tendencies, TEAM_TENDENCIES_PATH)
-
-    # 4th-down aggression
-    fourth_df = build_fourth_down_aggression(pbp_2024)
-    fourth_records = fourth_df.to_dict(orient="records")
-    with FOURTH_DOWN_PATH.open("w") as f:
-        json.dump(fourth_records, f, indent=2)
-    print(f"Wrote 4th-down aggression to {FOURTH_DOWN_PATH}")
-
-    # Neutral early-down pass rate
-    ed_df = build_neutral_early_down_pass_rate(pbp_2024)
-    ed_records = ed_df.to_dict(orient="records")
-    with EARLY_DOWN_PATH.open("w") as f:
-        json.dump(ed_records, f, indent=2)
-    print(f"Wrote neutral early-down pass rates to {EARLY_DOWN_PATH}")
-
-
-if __name__ == "__main__":
-    main()

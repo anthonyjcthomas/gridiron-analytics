@@ -1,0 +1,258 @@
+[
+  {
+    "team": "WAS",
+    "attempts": 23,
+    "go_for_it": 17,
+    "go_rate": 0.7391304347826086,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.21366126588180434
+  },
+  {
+    "team": "IND",
+    "attempts": 22,
+    "go_for_it": 16,
+    "go_rate": 0.7272727272727273,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.201803558371923
+  },
+  {
+    "team": "DET",
+    "attempts": 22,
+    "go_for_it": 16,
+    "go_rate": 0.7272727272727273,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.201803558371923
+  },
+  {
+    "team": "GB",
+    "attempts": 15,
+    "go_for_it": 10,
+    "go_rate": 0.6666666666666666,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.14119749776586232
+  },
+  {
+    "team": "DAL",
+    "attempts": 12,
+    "go_for_it": 8,
+    "go_rate": 0.6666666666666666,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.14119749776586232
+  },
+  {
+    "team": "CHI",
+    "attempts": 29,
+    "go_for_it": 19,
+    "go_rate": 0.6551724137931034,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.12970324489229912
+  },
+  {
+    "team": "CLE",
+    "attempts": 34,
+    "go_for_it": 22,
+    "go_rate": 0.6470588235294118,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.12158965462860749
+  },
+  {
+    "team": "NYG",
+    "attempts": 38,
+    "go_for_it": 24,
+    "go_rate": 0.631578947368421,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.10610977846761671
+  },
+  {
+    "team": "PHI",
+    "attempts": 29,
+    "go_for_it": 18,
+    "go_rate": 0.6206896551724138,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.0952204862716095
+  },
+  {
+    "team": "TB",
+    "attempts": 17,
+    "go_for_it": 10,
+    "go_rate": 0.5882352941176471,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.06276612521684277
+  },
+  {
+    "team": "ATL",
+    "attempts": 17,
+    "go_for_it": 10,
+    "go_rate": 0.5882352941176471,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.06276612521684277
+  },
+  {
+    "team": "CIN",
+    "attempts": 24,
+    "go_for_it": 14,
+    "go_rate": 0.5833333333333334,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.057864164432529064
+  },
+  {
+    "team": "NYJ",
+    "attempts": 21,
+    "go_for_it": 12,
+    "go_rate": 0.5714285714285714,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.04595940252776709
+  },
+  {
+    "team": "BAL",
+    "attempts": 14,
+    "go_for_it": 8,
+    "go_rate": 0.5714285714285714,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.04595940252776709
+  },
+  {
+    "team": "JAX",
+    "attempts": 28,
+    "go_for_it": 15,
+    "go_rate": 0.5357142857142857,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": 0.010245116813481392
+  },
+  {
+    "team": "CAR",
+    "attempts": 21,
+    "go_for_it": 11,
+    "go_rate": 0.5238095238095238,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.0016596450912804706
+  },
+  {
+    "team": "BUF",
+    "attempts": 34,
+    "go_for_it": 17,
+    "go_rate": 0.5,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.025469168900804307
+  },
+  {
+    "team": "NO",
+    "attempts": 27,
+    "go_for_it": 13,
+    "go_rate": 0.48148148148148145,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.04398768741932285
+  },
+  {
+    "team": "DEN",
+    "attempts": 25,
+    "go_for_it": 12,
+    "go_rate": 0.48,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.045469168900804324
+  },
+  {
+    "team": "SEA",
+    "attempts": 21,
+    "go_for_it": 10,
+    "go_rate": 0.47619047619047616,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.04927869271032814
+  },
+  {
+    "team": "LV",
+    "attempts": 24,
+    "go_for_it": 11,
+    "go_rate": 0.4583333333333333,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.06713583556747099
+  },
+  {
+    "team": "MIN",
+    "attempts": 18,
+    "go_for_it": 8,
+    "go_rate": 0.4444444444444444,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.08102472445635989
+  },
+  {
+    "team": "NE",
+    "attempts": 18,
+    "go_for_it": 8,
+    "go_rate": 0.4444444444444444,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.08102472445635989
+  },
+  {
+    "team": "TEN",
+    "attempts": 23,
+    "go_for_it": 10,
+    "go_rate": 0.43478260869565216,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.09068656020515214
+  },
+  {
+    "team": "LA",
+    "attempts": 31,
+    "go_for_it": 13,
+    "go_rate": 0.41935483870967744,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.10611433019112687
+  },
+  {
+    "team": "MIA",
+    "attempts": 24,
+    "go_for_it": 10,
+    "go_rate": 0.4166666666666667,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.10880250223413762
+  },
+  {
+    "team": "KC",
+    "attempts": 29,
+    "go_for_it": 12,
+    "go_rate": 0.41379310344827586,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.11167606545252845
+  },
+  {
+    "team": "LAC",
+    "attempts": 18,
+    "go_for_it": 7,
+    "go_rate": 0.3888888888888889,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.1365802800119154
+  },
+  {
+    "team": "SF",
+    "attempts": 18,
+    "go_for_it": 7,
+    "go_rate": 0.3888888888888889,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.1365802800119154
+  },
+  {
+    "team": "ARI",
+    "attempts": 20,
+    "go_for_it": 7,
+    "go_rate": 0.35,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.17546916890080433
+  },
+  {
+    "team": "PIT",
+    "attempts": 26,
+    "go_for_it": 9,
+    "go_rate": 0.34615384615384615,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.17931532274695816
+  },
+  {
+    "team": "HOU",
+    "attempts": 24,
+    "go_for_it": 8,
+    "go_rate": 0.3333333333333333,
+    "league_go_rate": 0.5254691689008043,
+    "aggression_index": -0.192135835567471
+  }
+]

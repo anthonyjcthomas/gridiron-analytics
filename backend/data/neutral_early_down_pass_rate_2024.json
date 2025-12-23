@@ -1,0 +1,258 @@
+[
+  {
+    "team": "CIN",
+    "plays": 352,
+    "pass_plays": 217,
+    "pass_rate": 0.6164772727272727,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.09871798715796076
+  },
+  {
+    "team": "SEA",
+    "plays": 290,
+    "pass_plays": 169,
+    "pass_rate": 0.5827586206896552,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.06499933512034328
+  },
+  {
+    "team": "LV",
+    "plays": 310,
+    "pass_plays": 180,
+    "pass_rate": 0.5806451612903226,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.06288587572101068
+  },
+  {
+    "team": "CLE",
+    "plays": 279,
+    "pass_plays": 159,
+    "pass_rate": 0.5698924731182796,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.052133187548967674
+  },
+  {
+    "team": "NYG",
+    "plays": 263,
+    "pass_plays": 149,
+    "pass_rate": 0.5665399239543726,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.04878063838506064
+  },
+  {
+    "team": "DAL",
+    "plays": 295,
+    "pass_plays": 166,
+    "pass_rate": 0.5627118644067797,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.04495257883746773
+  },
+  {
+    "team": "KC",
+    "plays": 414,
+    "pass_plays": 232,
+    "pass_rate": 0.5603864734299517,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.04262718786063979
+  },
+  {
+    "team": "NYJ",
+    "plays": 329,
+    "pass_plays": 184,
+    "pass_rate": 0.5592705167173252,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.04151123114801325
+  },
+  {
+    "team": "LA",
+    "plays": 349,
+    "pass_plays": 193,
+    "pass_rate": 0.5530085959885387,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.03524931041922674
+  },
+  {
+    "team": "LAC",
+    "plays": 314,
+    "pass_plays": 171,
+    "pass_rate": 0.5445859872611465,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.026826701691834542
+  },
+  {
+    "team": "ATL",
+    "plays": 368,
+    "pass_plays": 200,
+    "pass_rate": 0.5434782608695652,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.025718975300253244
+  },
+  {
+    "team": "WAS",
+    "plays": 333,
+    "pass_plays": 179,
+    "pass_rate": 0.5375375375375375,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.01977825196822558
+  },
+  {
+    "team": "NO",
+    "plays": 276,
+    "pass_plays": 147,
+    "pass_rate": 0.532608695652174,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.014849410082862002
+  },
+  {
+    "team": "JAX",
+    "plays": 294,
+    "pass_plays": 155,
+    "pass_rate": 0.5272108843537415,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": 0.009451598784429582
+  },
+  {
+    "team": "ARI",
+    "plays": 254,
+    "pass_plays": 131,
+    "pass_rate": 0.515748031496063,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.0020112540732489803
+  },
+  {
+    "team": "SF",
+    "plays": 280,
+    "pass_plays": 144,
+    "pass_rate": 0.5142857142857142,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.0034735712835977095
+  },
+  {
+    "team": "BAL",
+    "plays": 323,
+    "pass_plays": 166,
+    "pass_rate": 0.5139318885448917,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.0038273970244202538
+  },
+  {
+    "team": "HOU",
+    "plays": 343,
+    "pass_plays": 176,
+    "pass_rate": 0.5131195335276968,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.004639752041615153
+  },
+  {
+    "team": "IND",
+    "plays": 325,
+    "pass_plays": 166,
+    "pass_rate": 0.5107692307692308,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.006990054800081191
+  },
+  {
+    "team": "DEN",
+    "plays": 285,
+    "pass_plays": 144,
+    "pass_rate": 0.5052631578947369,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.012496127674575086
+  },
+  {
+    "team": "TB",
+    "plays": 308,
+    "pass_plays": 154,
+    "pass_rate": 0.5,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.017759285569311944
+  },
+  {
+    "team": "BUF",
+    "plays": 346,
+    "pass_plays": 173,
+    "pass_rate": 0.5,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.017759285569311944
+  },
+  {
+    "team": "MIN",
+    "plays": 298,
+    "pass_plays": 147,
+    "pass_rate": 0.49328859060402686,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.02447069496528509
+  },
+  {
+    "team": "PIT",
+    "plays": 340,
+    "pass_plays": 166,
+    "pass_rate": 0.48823529411764705,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.0295239914516649
+  },
+  {
+    "team": "MIA",
+    "plays": 309,
+    "pass_plays": 149,
+    "pass_rate": 0.48220064724919093,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.03555863832012102
+  },
+  {
+    "team": "CAR",
+    "plays": 245,
+    "pass_plays": 115,
+    "pass_rate": 0.46938775510204084,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.04837153046727111
+  },
+  {
+    "team": "NE",
+    "plays": 278,
+    "pass_plays": 130,
+    "pass_rate": 0.4676258992805755,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.050133386288736426
+  },
+  {
+    "team": "DET",
+    "plays": 270,
+    "pass_plays": 126,
+    "pass_rate": 0.4666666666666667,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.05109261890264527
+  },
+  {
+    "team": "CHI",
+    "plays": 253,
+    "pass_plays": 115,
+    "pass_rate": 0.45454545454545453,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.06321383102385741
+  },
+  {
+    "team": "TEN",
+    "plays": 270,
+    "pass_plays": 121,
+    "pass_rate": 0.44814814814814813,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.06961113742116382
+  },
+  {
+    "team": "PHI",
+    "plays": 430,
+    "pass_plays": 185,
+    "pass_rate": 0.43023255813953487,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.08752672742977707
+  },
+  {
+    "team": "GB",
+    "plays": 231,
+    "pass_plays": 93,
+    "pass_rate": 0.4025974025974026,
+    "league_pass_rate": 0.5177592855693119,
+    "pass_rate_over_avg": -0.11516188297190932
+  }
+]
