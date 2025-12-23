@@ -17,6 +17,10 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen
+          name="team/[team]"
+          options={{ title: "Team Profile" }} // or leave blank to just show the team code in the page itself
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
