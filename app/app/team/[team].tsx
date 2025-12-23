@@ -1,5 +1,4 @@
 // app/team/[team].tsx
-
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,18 +10,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams } from "expo-router";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { db } from "../../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 type TendencyRow = {
   down: number;
   rush_rate: number;
   pass_rate: number;
-};
-
-type TeamTendenciesResponse = {
-  team: string;
-  tendencies: TendencyRow[];
 };
 
 type FourthDownAggression = {
@@ -43,26 +37,6 @@ type NeutralEarlyDownPassRate = {
   pass_rate_over_avg: number;
 };
 
-type TeamSummaryResponse = {
-  team: string;
-  summary: string;
-};
-
-function KpiCard(props: {
-  label: string;
-  value: string;
-  sublabel?: string;
-}) {
-  const { label, value, sublabel } = props;
-  return (
-    <View style={styles.kpiCard}>
-      <Text style={styles.kpiLabel}>{label}</Text>
-      <Text style={styles.kpiValue}>{value}</Text>
-      {sublabel ? <Text style={styles.kpiSubLabel}>{sublabel}</Text> : null}
-    </View>
-  );
-}
-
 export default function TeamScreen() {
   const params = useLocalSearchParams<{ team?: string }>();
   const teamCode = (params.team || "").toUpperCase();
@@ -73,74 +47,76 @@ export default function TeamScreen() {
     useState<NeutralEarlyDownPassRate | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch numeric metrics
+  // numeric metrics from Firestore
   useEffect(() => {
     if (!teamCode) return;
 
-    const fetchAll = async () => {
+    const fetchMetrics = async () => {
       try {
-        setLoading(true);
+        setLoadingMetrics(true);
         setError(null);
 
-        const [tendRes, fourthRes, earlyRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/teams/${teamCode}/tendencies`),
-          fetch(`${API_BASE_URL}/league/fourth_down_aggression`),
-          fetch(`${API_BASE_URL}/league/neutral_early_down_pass_rate`),
+        const [tendSnap, fourthSnap, earlySnap] = await Promise.all([
+          getDoc(doc(db, "team_tendencies_2024", teamCode)),
+          getDoc(doc(db, "fourth_down_2024", teamCode)),
+          getDoc(doc(db, "early_down_pass_2024", teamCode)),
         ]);
 
-        if (!tendRes.ok) {
-          throw new Error(`Failed to load tendencies: ${tendRes.status}`);
+        if (tendSnap.exists()) {
+          const data = tendSnap.data() as {
+            team: string;
+            tendencies: TendencyRow[];
+          };
+          setTendencies(data.tendencies ?? []);
+        } else {
+          setTendencies(null);
         }
 
-        const tendJson =
-          (await tendRes.json()) as TeamTendenciesResponse;
-        setTendencies(tendJson.tendencies);
+        setFourthRow(
+          fourthSnap.exists()
+            ? ({ team: teamCode, ...fourthSnap.data() } as FourthDownAggression)
+            : null
+        );
 
-        if (fourthRes.ok) {
-          const fJson = (await fourthRes.json()) as FourthDownAggression[];
-          const match = fJson.find((r) => r.team === teamCode) || null;
-          setFourthRow(match);
-        }
-
-        if (earlyRes.ok) {
-          const eJson =
-            (await earlyRes.json()) as NeutralEarlyDownPassRate[];
-          const match = eJson.find((r) => r.team === teamCode) || null;
-          setEarlyRow(match);
-        }
+        setEarlyRow(
+          earlySnap.exists()
+            ? ({ team: teamCode, ...earlySnap.data() } as NeutralEarlyDownPassRate)
+            : null
+        );
       } catch (err: any) {
         console.error(err);
         setError(err.message ?? "Error loading team data");
       } finally {
-        setLoading(false);
+        setLoadingMetrics(false);
       }
     };
 
-    fetchAll();
+    fetchMetrics();
   }, [teamCode]);
 
-  // Fetch GPT summary
+  // summary from Firestore (pre-generated & cached)
   useEffect(() => {
     if (!teamCode) return;
 
     const fetchSummary = async () => {
       try {
         setLoadingSummary(true);
-        const res = await fetch(
-          `${API_BASE_URL}/teams/${teamCode}/summary`
+        const snap = await getDoc(
+          doc(db, "team_summaries_2024", teamCode)
         );
-        if (!res.ok) {
-          throw new Error(`Failed to load summary: ${res.status}`);
+        if (snap.exists()) {
+          const data = snap.data() as { team: string; summary: string };
+          setSummary(data.summary ?? null);
+        } else {
+          setSummary(null);
         }
-        const json = (await res.json()) as TeamSummaryResponse;
-        setSummary(json.summary);
       } catch (err) {
         console.error(err);
-        // degrade gracefully, just leave summary null
+        setSummary(null);
       } finally {
         setLoadingSummary(false);
       }
@@ -151,80 +127,67 @@ export default function TeamScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* This sets the header title instead of 'team/[team]' */}
       <Stack.Screen options={{ title: `${teamCode} · 2024 Offense` }} />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Team name + summary */}
         <Text style={styles.pageTitle}>{teamCode} 2024 Offensive Snapshot</Text>
 
         {loadingSummary ? (
           <Text style={styles.summaryPlaceholder}>
-            Generating scouting summary…
+            Loading scouting summary…
           </Text>
         ) : summary ? (
           <Text style={styles.summaryText}>{summary}</Text>
         ) : (
           <Text style={styles.summaryPlaceholder}>
-            No summary available for this team.
+            No summary available yet for this team.
           </Text>
         )}
 
         {/* KPI cards */}
         <View style={styles.kpiRow}>
-          <KpiCard
-            label="4th-Down Go Rate"
-            value={
-              fourthRow
-                ? `${(fourthRow.go_rate * 100).toFixed(1)}%`
-                : "--"
-            }
-            sublabel={
-              fourthRow
-                ? `League: ${(fourthRow.league_go_rate * 100).toFixed(
-                    1
-                  )}% · ${(fourthRow.aggression_index * 100).toFixed(
-                    1
-                  )}% vs avg`
-                : undefined
-            }
-          />
-          <KpiCard
-            label="Neutral 1st/2nd Pass %"
-            value={
-              earlyRow
-                ? `${(earlyRow.pass_rate * 100).toFixed(1)}%`
-                : "--"
-            }
-            sublabel={
-              earlyRow
-                ? `League: ${(earlyRow.league_pass_rate * 100).toFixed(
-                    1
-                  )}% · ${(earlyRow.pass_rate_over_avg * 100).toFixed(
-                    1
-                  )}% vs avg`
-                : undefined
-            }
-          />
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>4th-Down Go Rate</Text>
+            <Text style={styles.kpiValue}>
+              {fourthRow ? `${(fourthRow.go_rate * 100).toFixed(1)}%` : "--"}
+            </Text>
+            {fourthRow && (
+              <Text style={styles.kpiSubLabel}>
+                League: {(fourthRow.league_go_rate * 100).toFixed(1)}% ·{" "}
+                {((fourthRow.aggression_index ?? 0) * 100).toFixed(1)}% vs avg
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Neutral 1st/2nd Pass %</Text>
+            <Text style={styles.kpiValue}>
+              {earlyRow ? `${(earlyRow.pass_rate * 100).toFixed(1)}%` : "--"}
+            </Text>
+            {earlyRow && (
+              <Text style={styles.kpiSubLabel}>
+                League: {(earlyRow.league_pass_rate * 100).toFixed(1)}% ·{" "}
+                {((earlyRow.pass_rate_over_avg ?? 0) * 100).toFixed(1)}% vs avg
+              </Text>
+            )}
+          </View>
         </View>
 
-        {/* Divider */}
         <View style={styles.sectionDivider} />
 
-        {/* Down-by-down tendencies table */}
         <Text style={styles.sectionTitle}>Down-by-Down Tendencies</Text>
         <Text style={styles.sectionSubtitle}>
           Share of runs vs passes on each down.
         </Text>
 
-        {loading ? (
+        {loadingMetrics ? (
           <ActivityIndicator style={{ marginTop: 16 }} />
         ) : error ? (
           <Text style={styles.errorText}>{error}</Text>
-        ) : tendencies ? (
+        ) : tendencies && tendencies.length > 0 ? (
           <View style={styles.card}>
             <View style={styles.tableHeader}>
               <Text style={[styles.headerCell, { flex: 1 }]}>Down</Text>
@@ -266,7 +229,7 @@ export default function TeamScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb", // light background
+    backgroundColor: "#f9fafb",
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -276,7 +239,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#111827", // near-black
+    color: "#111827",
     marginBottom: 10,
   },
   summaryText: {

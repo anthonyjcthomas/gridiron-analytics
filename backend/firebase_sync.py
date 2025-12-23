@@ -1,114 +1,128 @@
-# backend/firebase_sync.py
-
-from typing import Any, Dict
+from typing import Dict, List
 
 import pandas as pd
 from google.cloud import firestore
 
+# Uses GOOGLE_APPLICATION_CREDENTIALS env var for auth
 db = firestore.Client()
 
-TEAM_TENDENCIES_COLLECTION = "team_tendencies_2024"
-FOURTH_DOWN_COLLECTION = "fourth_down_2024"
-EARLY_DOWN_COLLECTION = "early_down_pass_2024"
 
-
-def _commit_in_batches(batch, counter: int, chunk_size: int = 400):
-    """Helper to commit Firestore writes every chunk_size docs."""
-    if counter % chunk_size == 0:
-        batch.commit()
-        return db.batch()
-    return batch
-
-
-def sync_team_tendencies(df: pd.DataFrame):
+def sync_team_tendencies(team_tendencies_df: pd.DataFrame) -> None:
     """
-    Write team tendencies into Firestore:
+    Write team_tendencies_2024 into Firestore.
+
     Collection: team_tendencies_2024
-    Doc ID: team code (e.g. "GB")
-    Fields: { team: "GB", tendencies: [ {down, rush_rate, pass_rate}, ... ] }
+    Doc ID: team code (e.g. "JAX")
+    Fields:
+      - team: str
+      - tendencies: list of { down, rush_rate, pass_rate }
     """
-    col = db.collection(TEAM_TENDENCIES_COLLECTION)
+    col = db.collection("team_tendencies_2024")
     batch = db.batch()
-    count = 0
 
-    for team, group in df.groupby("team"):
-        tendencies = [
-            {
-                "down": int(row["down"]),
-                "rush_rate": float(row["rush_rate"]),
-                "pass_rate": float(row["pass_rate"]),
-            }
-            for _, row in group.iterrows()
-        ]
+    for team, group in team_tendencies_df.groupby("team"):
+        doc_ref = col.document(team)
 
-        doc_ref = col.document(str(team))
+        tendencies = []
+        for _, row in group.iterrows():
+            tendencies.append(
+                {
+                    "down": int(row["down"]),
+                    "rush_rate": float(row["rush_rate"]),
+                    "pass_rate": float(row["pass_rate"]),
+                }
+            )
+
         batch.set(
             doc_ref,
             {
-                "team": str(team),
+                "team": team,
                 "tendencies": tendencies,
             },
         )
-        count += 1
-        batch = _commit_in_batches(batch, count)
 
     batch.commit()
-    print(f"Synced {count} team tendency docs to Firestore.")
+    print(f"[Firestore] Wrote team_tendencies_2024 for {len(team_tendencies_df['team'].unique())} teams")
 
 
-def sync_fourth_down(df: pd.DataFrame):
+def sync_fourth_down_aggression(records: List[Dict]) -> None:
     """
-    Write 4th-down aggression into Firestore:
+    Write fourth_down_2024 into Firestore.
+
     Collection: fourth_down_2024
     Doc ID: team code
+    Fields: attempts, go_for_it, go_rate, league_go_rate, aggression_index
     """
-    col = db.collection(FOURTH_DOWN_COLLECTION)
+    col = db.collection("fourth_down_2024")
     batch = db.batch()
-    count = 0
 
-    for _, row in df.iterrows():
-        team = str(row["team"])
+    for row in records:
+        team = row["team"]
         doc_ref = col.document(team)
-        payload: Dict[str, Any] = {
+        payload = {
             "team": team,
-            "attempts": int(row["attempts"]),
-            "go_for_it": int(row["go_for_it"]),
-            "go_rate": float(row["go_rate"]),
-            "league_go_rate": float(row["league_go_rate"]),
-            "aggression_index": float(row["aggression_index"]),
+            "attempts": int(row.get("attempts", 0)),
+            "go_for_it": int(row.get("go_for_it", 0)),
+            "go_rate": float(row.get("go_rate", 0.0)),
+            "league_go_rate": float(row.get("league_go_rate", 0.0)),
+            "aggression_index": float(row.get("aggression_index", 0.0)),
         }
         batch.set(doc_ref, payload)
-        count += 1
-        batch = _commit_in_batches(batch, count)
 
     batch.commit()
-    print(f"Synced {count} fourth-down docs to Firestore.")
+    print(f"[Firestore] Wrote fourth_down_2024 for {len(records)} teams")
 
 
-def sync_early_down(df: pd.DataFrame):
+def sync_early_down_pass_rate(records: List[Dict]) -> None:
     """
-    Write neutral early-down pass rate into Firestore:
+    Write early_down_pass_2024 into Firestore.
+
     Collection: early_down_pass_2024
     Doc ID: team code
+    Fields: plays, pass_plays, pass_rate, league_pass_rate, pass_rate_over_avg
     """
-    col = db.collection(EARLY_DOWN_COLLECTION)
+    col = db.collection("early_down_pass_2024")
     batch = db.batch()
-    count = 0
 
-    for _, row in df.iterrows():
-        team = str(row["team"])
+    for row in records:
+        team = row["team"]
         doc_ref = col.document(team)
-        payload: Dict[str, Any] = {
+        payload = {
             "team": team,
-            "plays": int(row["plays"]),
-            "pass_plays": int(row["pass_plays"]),
-            "pass_rate": float(row["pass_rate"]),
-            "league_pass_rate": float(row["league_pass_rate"]),
-            "pass_rate_over_avg": float(row["pass_rate_over_avg"]),
+            "plays": int(row.get("plays", 0)),
+            "pass_plays": int(row.get("pass_plays", 0)),
+            "pass_rate": float(row.get("pass_rate", 0.0)),
+            "league_pass_rate": float(row.get("league_pass_rate", 0.0)),
+            "pass_rate_over_avg": float(row.get("pass_rate_over_avg", 0.0)),
         }
         batch.set(doc_ref, payload)
-        count += 1
-        batch = _commit_in_batches(batch, count)
 
     batch.commit()
-    print(f"Synced {count} early-down pass docs to Firestore.")
+    print(f"[Firestore] Wrote early_down_pass_2024 for {len(records)} teams")
+
+
+def sync_team_summaries(summaries: Dict[str, str]) -> None:
+    """
+    Write GPT-generated team summaries into Firestore.
+
+    Collection: team_summaries_2024
+    Doc ID: team code
+    Fields:
+      - team: str
+      - summary: str
+    """
+    col = db.collection("team_summaries_2024")
+    batch = db.batch()
+
+    for team, summary in summaries.items():
+        doc_ref = col.document(team)
+        batch.set(
+            doc_ref,
+            {
+                "team": team,
+                "summary": summary,
+            },
+        )
+
+    batch.commit()
+    print(f"[Firestore] Wrote team_summaries_2024 for {len(summaries)} teams")

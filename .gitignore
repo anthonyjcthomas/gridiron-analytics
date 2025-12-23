@@ -11,7 +11,8 @@ gridironanalyticssdk.json
 *.service-account.json
 *.firebase-adminsdk.json
 *.gcloud-key.json
-
+backend/firebasesdk.json
+firebasesdk.json
 
 # dependencies
 node_modules/

@@ -1,3 +1,4 @@
+// app/(tabs)/index.tsx
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -5,12 +6,16 @@ import {
   StyleSheet,
   Text,
   View,
-  Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { db } from "../../firebase";
+import {
+  collection,
+  getDocs,
+  QueryDocumentSnapshot,
+} from "firebase/firestore";
 
 type FourthDownAggression = {
   team: string;
@@ -49,117 +54,128 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const [teams, setTeams] = useState<string[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+
   const [fourthData, setFourthData] = useState<FourthDownAggression[]>([]);
   const [earlyData, setEarlyData] = useState<NeutralEarlyDownPassRate[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingLeague, setLoadingLeague] = useState(false);
+  const [loadingTeams, setLoadingTeams] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load league metrics + teams from Firestore
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchInitial = async () => {
       try {
-        setLoading(true);
         setError(null);
-
-        // Teams (for the pill nav)
-        const teamRes = await fetch(`${API_BASE_URL}/teams`);
-        if (!teamRes.ok) {
-          throw new Error(`Failed to fetch teams: ${teamRes.status}`);
-        }
-        const teamJson = (await teamRes.json()) as string[];
-        setTeams(teamJson);
+        setLoadingLeague(true);
+        setLoadingTeams(true);
 
         // 4th-down aggression
-        const fourthRes = await fetch(
-          `${API_BASE_URL}/league/fourth_down_aggression`
+        const fourthSnap = await getDocs(collection(db, "fourth_down_2024"));
+        const fourth: FourthDownAggression[] = fourthSnap.docs.map(
+          (d: QueryDocumentSnapshot) =>
+            ({ team: d.id, ...d.data() } as FourthDownAggression)
         );
-        if (!fourthRes.ok) {
-          throw new Error(
-            `Failed to fetch 4th-down aggression: ${fourthRes.status}`
-          );
-        }
-        const fourthJson = (await fourthRes.json()) as FourthDownAggression[];
-        setFourthData(fourthJson);
+        fourth.sort(
+          (a, b) => (b.aggression_index ?? 0) - (a.aggression_index ?? 0)
+        );
+        setFourthData(fourth);
 
-        // Neutral early-down pass rate
-        const earlyRes = await fetch(
-          `${API_BASE_URL}/league/neutral_early_down_pass_rate`
+        // neutral early-down pass rate
+        const earlySnap = await getDocs(collection(db, "early_down_pass_2024"));
+        const early: NeutralEarlyDownPassRate[] = earlySnap.docs.map(
+          (d: QueryDocumentSnapshot) =>
+            ({ team: d.id, ...d.data() } as NeutralEarlyDownPassRate)
         );
-        if (!earlyRes.ok) {
-          throw new Error(
-            `Failed to fetch early-down pass rates: ${earlyRes.status}`
-          );
-        }
-        const earlyJson = (await earlyRes.json()) as NeutralEarlyDownPassRate[];
-        setEarlyData(earlyJson);
+        early.sort(
+          (a, b) => (b.pass_rate_over_avg ?? 0) - (a.pass_rate_over_avg ?? 0)
+        );
+        setEarlyData(early);
+
+        // teams list
+        const teamsSnap = await getDocs(collection(db, "team_tendencies_2024"));
+        const teamIds = teamsSnap.docs.map((d) => d.id).sort();
+        setTeams(teamIds);
+        if (teamIds.length > 0) setSelectedTeam(teamIds[0]);
       } catch (err: any) {
         console.error(err);
-        setError(err.message ?? "Error loading league data");
+        setError(err.message ?? "Error loading data");
       } finally {
-        setLoading(false);
+        setLoadingLeague(false);
+        setLoadingTeams(false);
       }
     };
 
-    fetchAll();
+    fetchInitial();
   }, []);
 
-  // Derived league numbers for KPIs + summary
-  const mostAggressive = fourthData[0];
-  const mostConservative =
-    fourthData.length > 0 ? fourthData[fourthData.length - 1] : undefined;
-
-  const mostPassHeavy = earlyData[0];
-  const mostRunHeavy =
-    earlyData.length > 0 ? earlyData[earlyData.length - 1] : undefined;
+  const topAggressive = fourthData[0];
+  const topPassHeavy = earlyData[0];
 
   const leagueGoRate =
     fourthData.length > 0 ? fourthData[0].league_go_rate : null;
   const leaguePassRate =
     earlyData.length > 0 ? earlyData[0].league_pass_rate : null;
 
-  const goTeam = (team: string) => {
-    router.push(`/team/${team}`);
+  const handleTeamPress = (code: string) => {
+    setSelectedTeam(code);
+    router.push(`/team/${code}`);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ paddingBottom: 32 }}
       >
-        {/* Header */}
         <Text style={styles.appName}>Gridiron Analytics</Text>
         <Text style={styles.appSubtitle}>2024 NFL Season Snapshot</Text>
 
-        {/* Team pill nav */}
-        {teams.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.teamPillScroll}
-            contentContainerStyle={styles.teamPillRow}
-          >
-            {teams.map((team) => (
-              <Pressable
-                key={team}
-                onPress={() => goTeam(team)}
-                style={styles.teamPill}
-              >
-                <Text style={styles.teamPillText}>{team}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        )}
+        {/* Team carousel */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.teamScroll}
+          contentContainerStyle={{ paddingRight: 8 }}
+        >
+          {loadingTeams && teams.length === 0 ? (
+            <ActivityIndicator style={{ marginVertical: 8 }} />
+          ) : (
+            teams.map((code) => {
+              const active = code === selectedTeam;
+              return (
+                <TouchableOpacity
+                  key={code}
+                  onPress={() => handleTeamPress(code)}
+                  style={[
+                    styles.teamChip,
+                    active && styles.teamChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.teamChipText,
+                      active && styles.teamChipTextActive,
+                    ]}
+                  >
+                    {code}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
 
-        {/* KPIs */}
+        {/* KPI cards */}
         <View style={styles.metricsRow}>
           <MetricCard
             label="Most aggressive on 4th"
             value={
-              mostAggressive && leagueGoRate != null
-                ? `${mostAggressive.team} · ${(mostAggressive.go_rate * 100).toFixed(
+              topAggressive
+                ? `${topAggressive.team} · ${(topAggressive.go_rate * 100).toFixed(
                     1
                   )}%`
-                : loading
+                : loadingLeague
                 ? "Loading..."
                 : "--"
             }
@@ -170,13 +186,13 @@ export default function HomeScreen() {
             }
           />
           <MetricCard
-            label="Pass-heaviest (neutral 1st/2nd)"
+            label="Pass-heaviest (Neutral 1st/2nd)"
             value={
-              mostPassHeavy && leaguePassRate != null
-                ? `${mostPassHeavy.team} · ${(mostPassHeavy.pass_rate * 100).toFixed(
+              topPassHeavy
+                ? `${topPassHeavy.team} · ${(topPassHeavy.pass_rate * 100).toFixed(
                     1
                   )}%`
-                : loading
+                : loadingLeague
                 ? "Loading..."
                 : "--"
             }
@@ -188,97 +204,54 @@ export default function HomeScreen() {
           />
         </View>
 
-        {loading && <ActivityIndicator style={styles.loader} />}
+        <View style={styles.sectionDivider} />
+
+        {/* League overview summary */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.sectionTitle}>League Overview</Text>
+          <Text style={styles.sectionSubtitle}>
+            High-level read on how offenses approached 2024.
+          </Text>
+
+          <View style={styles.bulletGroup}>
+            <Text style={styles.bulletHeading}>4th-Down Aggression</Text>
+            <Text style={styles.bulletText}>
+              {topAggressive
+                ? `${topAggressive.team} led the league in 4th-and-short aggression, going for it on about ${(topAggressive.go_rate * 100).toFixed(
+                    1
+                  )}% of eligible plays compared to the league baseline near ${
+                    leagueGoRate ? (leagueGoRate * 100).toFixed(1) : "52.5"
+                  }%.`
+                : "Top teams pushed the envelope on 4th-and-short, well above the league baseline go rate."}
+            </Text>
+          </View>
+
+          <View style={styles.bulletGroup}>
+            <Text style={styles.bulletHeading}>
+              Neutral Early-Down Pass Rate
+            </Text>
+            <Text style={styles.bulletText}>
+              {topPassHeavy
+                ? `${topPassHeavy.team} skewed the most pass-heavy on 1st and 2nd down in neutral situations, throwing on roughly ${(topPassHeavy.pass_rate * 100).toFixed(
+                    1
+                  )}% of snaps versus a league average near ${
+                    leaguePassRate ? (leaguePassRate * 100).toFixed(1) : "52"
+                  }%.`
+                : "Several offenses leaned into early-down passing, separating themselves from league-average pass rates."}
+            </Text>
+          </View>
+
+          <View style={styles.bulletGroup}>
+            <Text style={styles.bulletHeading}>How to Use This Site</Text>
+            <Text style={styles.bulletText}>
+              Use the team chips above to jump into a specific offense, or head
+              to the Explore tab to dive into league-wide tables and
+              down-by-down visuals.
+            </Text>
+          </View>
+        </View>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
-
-        {/* League summary content */}
-        {!loading && !error && fourthData.length > 0 && earlyData.length > 0 && (
-          <>
-            <View style={styles.sectionDivider} />
-
-            <Text style={styles.sectionTitle}>League Overview</Text>
-            <Text style={styles.sectionSubtitle}>
-              High-level context on 4th-down decision making and neutral
-              early-down playcalling in 2024.
-            </Text>
-
-            <View style={styles.summaryBlock}>
-              <Text style={styles.summaryHeading}>4th-Down Decisions</Text>
-              <Text style={styles.summaryText}>
-                Across the league, offenses go for it on{" "}
-                <Text style={styles.summaryEmphasis}>
-                  {(leagueGoRate! * 100).toFixed(1)}%
-                </Text>{" "}
-                of 4th-and-short situations (1–3 yards, between the 20s). The{" "}
-                <Text style={styles.summaryEmphasis}>{mostAggressive?.team}</Text>{" "}
-                offense sits at{" "}
-                <Text style={styles.summaryEmphasis}>
-                  {(mostAggressive!.go_rate * 100).toFixed(1)}%
-                </Text>{" "}
-                — well above league average — while{" "}
-                <Text style={styles.summaryEmphasis}>
-                  {mostConservative?.team}
-                </Text>{" "}
-                is the most conservative team in these spots.
-              </Text>
-              <Text style={styles.summaryText}>
-                In general, aggressive teams trade small increases in failure
-                rate for more first downs and longer drives. Conservative teams
-                lean on field position instead, punting or kicking more often in
-                what analytics would consider “go” situations.
-              </Text>
-            </View>
-
-            <View style={styles.summaryBlock}>
-              <Text style={styles.summaryHeading}>
-                Neutral Early-Down Pass Rate
-              </Text>
-              <Text style={styles.summaryText}>
-                In neutral game states (1st/2nd down, 7–10 yards to go, between
-                the 20s, score within ±7), teams throw the ball on{" "}
-                <Text style={styles.summaryEmphasis}>
-                  {(leaguePassRate! * 100).toFixed(1)}%
-                </Text>{" "}
-                of plays on average.{" "}
-                <Text style={styles.summaryEmphasis}>{mostPassHeavy?.team}</Text>{" "}
-                leads the league, throwing on{" "}
-                <Text style={styles.summaryEmphasis}>
-                  {(mostPassHeavy!.pass_rate * 100).toFixed(1)}%
-                </Text>{" "}
-                of early-down snaps, while{" "}
-                <Text style={styles.summaryEmphasis}>{mostRunHeavy?.team}</Text>{" "}
-                sits at the run-heaviest end of the spectrum.
-              </Text>
-              <Text style={styles.summaryText}>
-                Higher pass rates on early downs generally correlate with more
-                efficient offenses — but they also expose quarterbacks to more
-                pressure and variance. Run-heavy teams tend to play for shorter
-                third downs, slower games, and lower total play volume.
-              </Text>
-            </View>
-
-            <View style={styles.summaryBlock}>
-              <Text style={styles.summaryHeading}>
-                How to Use This Dashboard
-              </Text>
-              <Text style={styles.summaryText}>
-                Use the{" "}
-                <Text style={styles.summaryEmphasis}>team pills up top</Text> to
-                jump into any team’s detail page for a deeper breakdown: a
-                GPT-generated offensive summary, down-by-down tendencies, and
-                key context around how they call games.
-              </Text>
-              <Text style={styles.summaryText}>
-                The <Text style={styles.summaryEmphasis}>Explore</Text> tab
-                gives a league-wide view with sortable tables for 4th-down
-                aggression and neutral early-down pass rate. It’s built to help
-                you compare philosophies at a glance — from ultra-aggressive
-                offenses to old-school, field-position-first approaches.
-              </Text>
-            </View>
-          </>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -288,48 +261,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
-  },
-  scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 24,
-    paddingBottom: 32,
   },
   appName: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#000000",
   },
   appSubtitle: {
     fontSize: 14,
-    color: "#6b7280",
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  teamPillScroll: {
+    color: "#4b5563",
     marginTop: 4,
     marginBottom: 16,
   },
-  teamPillRow: {
-    paddingRight: 8,
-    gap: 8,
+  teamScroll: {
+    marginBottom: 12,
   },
-  teamPill: {
+  teamChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#d4d4d8",
-    backgroundColor: "#f4f4f5",
+    borderColor: "#d1d5db",
+    marginRight: 8,
+    backgroundColor: "#ffffff",
   },
-  teamPillText: {
-    fontSize: 12,
-    fontWeight: "600",
+  teamChipActive: {
+    backgroundColor: "#111827",
+    borderColor: "#111827",
+  },
+  teamChipText: {
+    fontSize: 13,
     color: "#111827",
+  },
+  teamChipTextActive: {
+    color: "#ffffff",
+    fontWeight: "600",
   },
   metricsRow: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 8,
   },
   metricCard: {
     flex: 1,
@@ -344,7 +316,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#6b7280",
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
   metricValue: {
     marginTop: 6,
@@ -355,15 +327,19 @@ const styles = StyleSheet.create({
   metricSubLabel: {
     marginTop: 4,
     fontSize: 12,
-    color: "#6b7280",
-  },
-  loader: {
-    marginTop: 16,
+    color: "#9ca3af",
   },
   sectionDivider: {
     height: 1,
     backgroundColor: "#e5e7eb",
     marginVertical: 20,
+  },
+  summaryCard: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
   sectionTitle: {
     fontSize: 18,
@@ -376,27 +352,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 12,
   },
-  summaryBlock: {
-    marginTop: 12,
+  bulletGroup: {
+    marginBottom: 12,
   },
-  summaryHeading: {
-    fontSize: 15,
+  bulletHeading: {
+    fontSize: 14,
     fontWeight: "600",
     color: "#111827",
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  summaryText: {
+  bulletText: {
     fontSize: 13,
-    color: "#111827",
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  summaryEmphasis: {
-    fontWeight: "600",
-    color: "#111827",
+    color: "#4b5563",
+    lineHeight: 19,
   },
   errorText: {
-    marginTop: 8,
     color: "#b91c1c",
+    marginTop: 8,
   },
 });
